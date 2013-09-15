@@ -24,7 +24,7 @@ Version:	0.6.2
 Release:	%{rel}
 License:	GPL v2+
 Group:		Applications/System
-Source0:	http://archive.zfsonlinux.org/downloads/zfsonlinux/spl/%{name}-%{version}.tar.gz
+Source0:	http://archive.zfsonlinux.org/downloads/zfsonlinux/spl/%{pname}-%{version}.tar.gz
 # Source0-md5:	f00535bf89a7fde0e08f44a14a1f1e03
 URL:		http://zfsonlinux.org/
 %if %{with kernel}
