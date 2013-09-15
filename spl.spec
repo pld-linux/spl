@@ -80,7 +80,8 @@ dla jądra PLD z pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.
 	--with-config="%{?with_kernel:%{?with_userspace:all}}%{!?with_kernel:user}%{!?with_userspace:kernel}" \
 	--with-linux=%{_kernelsrcdir}
 
-%{__make}
+%{__make} \
+	%{?with_verbose:V=1}
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -95,7 +96,7 @@ rm -rf $RPM_BUILD_ROOT
 %if %{with userspace}
 %files
 %defattr(644,root,root,755)
-%doc AUTHORS DISCLAIMER 
+%doc AUTHORS DISCLAIMER
 %attr(755,root,root) %{_sbindir}/splat
 %{_mandir}/man1/splat.1*
 %endif
