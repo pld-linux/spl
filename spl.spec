@@ -59,6 +59,7 @@ Solaris Porting Layer - moduły jądra Linuksa.
 %package -n kernel%{_alt_kernel}-spl-devel
 Summary:	Solaris Porting Layer - Linux kernel headers
 Summary(pl.UTF-8):	Solaris Porting Layer - pliki nagłówkowe jądra Linuksa
+Release:	%{rel}@%{_kernel_ver_str}
 Group:		Development/Building
 %{?with_dist_kernel:Requires:	kernel%{_alt_kernel}-headers}
 
