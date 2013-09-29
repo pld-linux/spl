@@ -72,7 +72,7 @@ Solaris Porting Layer - pliki nagłówkowe jądra Linuksa skonfigurowane
 dla jądra PLD z pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.
 
 %prep
-%setup -q
+%setup -q -n %{pname}-%{version}
 
 %build
 %configure \
