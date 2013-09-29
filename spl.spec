@@ -20,7 +20,7 @@ Summary(pl.UTF-8):	Solaris Porting Layer - warstwa do portowania kodu z Solarisa
 %define	pname	spl
 Name:		%{pname}%{_alt_kernel}
 Version:	0.6.2
-%define	rel	1
+%define	rel	2
 Release:	%{rel}
 License:	GPL v2+
 Group:		Applications/System
