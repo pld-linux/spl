@@ -8,19 +8,22 @@
 %if %{without kernel}
 %undefine	with_dist_kernel
 %endif
+
 %if "%{_alt_kernel}" != "%{nil}"
 %undefine	with_userspace
 %endif
+
 %if %{without userspace}
 # nothing to be placed to debuginfo package
 %define		_enable_debug_packages	0
 %endif
+
+%define	pname	spl
+%define	rel	3
 Summary:	Solaris Porting Layer
 Summary(pl.UTF-8):	Solaris Porting Layer - warstwa do portowania kodu z Solarisa
-%define	pname	spl
 Name:		%{pname}%{_alt_kernel}
 Version:	0.6.2
-%define	rel	2
 Release:	%{rel}
 License:	GPL v2+
 Group:		Applications/System
