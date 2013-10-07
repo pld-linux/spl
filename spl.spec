@@ -19,7 +19,7 @@
 %endif
 
 %define	pname	spl
-%define	rel	4
+%define	rel	5
 Summary:	Solaris Porting Layer
 Summary(pl.UTF-8):	Solaris Porting Layer - warstwa do portowania kodu z Solarisa
 Name:		%{pname}%{_alt_kernel}
