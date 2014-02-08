@@ -138,6 +138,9 @@ p=`pwd`\
 %patch1 -p1
 
 %build
+%{__aclocal} -I config
+%{__autoconf}
+%{__automake}
 %{?with_kernel:%{expand:%bkpkg}}
 
 %if %{with userspace}
