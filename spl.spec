@@ -140,6 +140,7 @@ p=`pwd`\
 %build
 %{__aclocal} -I config
 %{__autoconf}
+%{__autoheader}
 %{__automake}
 %{?with_kernel:%{expand:%bkpkg}}
 
