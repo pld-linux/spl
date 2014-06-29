@@ -41,18 +41,16 @@ exit 1
 %define		bkpkg	%(echo %{_build_kernels} | tr , '\\n' | while read n ; do echo %%undefine alt_kernel ; [ -z "$n" ] || echo %%define alt_kernel $n ; echo %%build_kernel_pkg ; done)
 
 %define		pname	spl
-%define		rel	7
+%define		rel	1
 Summary:	Solaris Porting Layer
 Summary(pl.UTF-8):	Solaris Porting Layer - warstwa do portowania kodu z Solarisa
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	0.6.2
+Version:	0.6.3
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	GPL v2+
 Group:		Applications/System
 Source0:	http://archive.zfsonlinux.org/downloads/zfsonlinux/spl/%{pname}-%{version}.tar.gz
-# Source0-md5:	f00535bf89a7fde0e08f44a14a1f1e03
-Patch0:		%{pname}-linux-3.12.patch
-Patch1:		%{pname}-linux-3.13.patch
+# Source0-md5:	8df6ce3c8f1d9af6526b36f5079cba59
 URL:		http://zfsonlinux.org/
 BuildRequires:	rpmbuild(macros) >= 1.678
 %{?with_dist_kernel:%{expand:%kbrs}}
@@ -134,8 +132,6 @@ p=`pwd`\
 
 %prep
 %setup -q -n %{pname}-%{version}
-%patch0 -p1
-%patch1 -p1
 
 %build
 %{__aclocal} -I config
@@ -175,4 +171,5 @@ rm -rf $RPM_BUILD_ROOT
 %doc AUTHORS DISCLAIMER
 %attr(755,root,root) %{_sbindir}/splat
 %{_mandir}/man1/splat.1*
+%{_mandir}/man5/spl-module-parameters.5.gz
 %endif
