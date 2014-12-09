@@ -41,7 +41,7 @@ exit 1
 %define		bkpkg	%(echo %{_build_kernels} | tr , '\\n' | while read n ; do echo %%undefine alt_kernel ; [ -z "$n" ] || echo %%define alt_kernel $n ; echo %%build_kernel_pkg ; done)
 
 %define		pname	spl
-%define		rel	2
+%define		rel	3
 Summary:	Solaris Porting Layer
 Summary(pl.UTF-8):	Solaris Porting Layer - warstwa do portowania kodu z Solarisa
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
@@ -62,6 +62,19 @@ Solaris Porting Layer.
 
 %description -l pl.UTF-8
 Solaris Porting Layer - warstwa do portowania kodu z Solarisa.
+
+%package -n kernel-spl-common-devel
+Summary:	Solaris Porting Layer - Linux kernel headers
+Summary(pl.UTF-8):	Solaris Porting Layer - pliki nagłówkowe jądra Linuksa
+Group:		Development/Building
+
+%description -n kernel-spl-common-devel
+Solaris Porting Layer - Linux kernel headers common for all PLD
+kernel versions.
+
+%description -n kernel-spl-common-devel -l pl.UTF-8
+Solaris Porting Layer - pliki nagłówkowe jądra Linuksa wspólne
+dla wszystkich wersji jądrer PLD.
 
 %define	kernel_pkg()\
 %package -n kernel%{_alt_kernel}-spl\
@@ -86,7 +99,10 @@ Summary:	Solaris Porting Layer - Linux kernel headers\
 Summary(pl.UTF-8):	Solaris Porting Layer - pliki nagłówkowe jądra Linuksa\
 Release:	%{rel}@%{_kernel_ver_str}\
 Group:		Development/Building\
-%{?with_dist_kernel:Requires:	kernel%{_alt_kernel}-headers}\
+%if %{with dist_kernel}\
+Requires:	kernel%{_alt_kernel}-headers\
+Requires:	kernel-spl-common-devel\
+%endif\
 \
 %description -n kernel%{_alt_kernel}-spl-devel\
 Solaris Porting Layer - Linux kernel headers configured for PLD\
@@ -105,9 +121,6 @@ dla jądra PLD z pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.\
 \
 %files -n kernel%{_alt_kernel}-spl-devel\
 %defattr(644,root,root,755)\
-%dir /usr/src/spl-%{version}\
-/usr/src/spl-%{version}/spl*.in\
-/usr/src/spl-%{version}/include\
 /usr/src/spl-%{version}/%{_kernel_ver}\
 \
 %post	-n kernel%{_alt_kernel}-spl\
@@ -174,4 +187,12 @@ rm -rf $RPM_BUILD_ROOT
 %attr(755,root,root) %{_sbindir}/splat
 %{_mandir}/man1/splat.1*
 %{_mandir}/man5/spl-module-parameters.5.gz
+%endif
+
+%if %{with kernel}
+%files -n kernel-spl-common-devel
+%defattr(644,root,root,755)
+%dir /usr/src/spl-%{version}
+/usr/src/spl-%{version}/spl*.in
+/usr/src/spl-%{version}/include
 %endif
