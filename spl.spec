@@ -41,7 +41,7 @@ exit 1
 %define		bkpkg	%(echo %{_build_kernels} | tr , '\\n' | while read n ; do echo %%undefine alt_kernel ; [ -z "$n" ] || echo %%define alt_kernel $n ; echo %%build_kernel_pkg ; done)
 
 %define		pname	spl
-%define		rel	3
+%define		rel	4
 Summary:	Solaris Porting Layer
 Summary(pl.UTF-8):	Solaris Porting Layer - warstwa do portowania kodu z Solarisa
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
@@ -52,6 +52,7 @@ Group:		Applications/System
 Source0:	http://archive.zfsonlinux.org/downloads/zfsonlinux/spl/%{pname}-%{version}.tar.gz
 # Source0-md5:	8df6ce3c8f1d9af6526b36f5079cba59
 Patch0:		linux-3.17.patch
+Patch0:		linux-3.18.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	rpmbuild(macros) >= 1.678
 %{?with_dist_kernel:%{expand:%kbrs}}
@@ -147,6 +148,7 @@ p=`pwd`\
 %prep
 %setup -q -n %{pname}-%{version}
 %patch0 -p1
+%patch1 -p1
 
 %build
 %{__aclocal} -I config

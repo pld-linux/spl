@@ -1,0 +1,14 @@
+--- spl-0.6.3/module/spl/spl-kmem.c~	2015-01-26 00:23:23.000000000 +0100
++++ spl-0.6.3/module/spl/spl-kmem.c	2015-01-26 00:24:13.312560884 +0100
+@@ -2369,7 +2369,11 @@
+ 
+ 	spl_slab_reclaim(skc, count, 1);
+ 	clear_bit(KMC_BIT_REAPING, &skc->skc_flags);
++#if ( LINUX_VERSION_CODE < KERNEL_VERSION(3,18,0) )
+ 	smp_mb__after_clear_bit();
++#else
++	smp_mb__after_atomic();
++#endif
+ 	wake_up_bit(&skc->skc_flags, KMC_BIT_REAPING);
+ out:
+ 	atomic_dec(&skc->skc_ref);
