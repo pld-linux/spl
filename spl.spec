@@ -52,7 +52,7 @@ Group:		Applications/System
 Source0:	http://archive.zfsonlinux.org/downloads/zfsonlinux/spl/%{pname}-%{version}.tar.gz
 # Source0-md5:	8df6ce3c8f1d9af6526b36f5079cba59
 Patch0:		linux-3.17.patch
-Patch0:		linux-3.18.patch
+Patch1:		linux-3.18.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	rpmbuild(macros) >= 1.678
 %{?with_dist_kernel:%{expand:%kbrs}}
