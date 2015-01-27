@@ -1,14 +1,9 @@
 #
 # Conditional build:
-%bcond_without	dist_kernel	# allow non-distribution kernel
 %bcond_without	kernel		# don't build kernel modules
 %bcond_without	userspace	# don't build userspace programs
 %bcond_with	verbose		# verbose build (V=1)
 #
-%if %{without kernel}
-%undefine	with_dist_kernel
-%endif
-
 # The goal here is to have main, userspace, package built once with
 # simple release number, and only rebuild kernel packages with kernel
 # version as part of release number, without the need to bump release
@@ -55,7 +50,7 @@ Patch0:		linux-3.17.patch
 Patch1:		linux-3.18.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	rpmbuild(macros) >= 1.678
-%{?with_dist_kernel:%{expand:%kbrs}}
+%{?with_kernel:%{expand:%kbrs}}
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
 %description
@@ -84,10 +79,8 @@ Summary(pl.UTF-8):	Solaris Porting Layer - moduły jądra Linuksa\
 Release:	%{rel}@%{_kernel_ver_str}\
 Group:		Base/Kernel\
 Requires(post,postun):	/sbin/depmod\
-%if %{with dist_kernel}\
 %requires_releq_kernel\
 Requires(postun):	%releq_kernel\
-%endif\
 \
 %description -n kernel%{_alt_kernel}-spl\
 Solaris Porting Layer - Linux kernel modules.\
@@ -100,10 +93,8 @@ Summary:	Solaris Porting Layer - Linux kernel headers\
 Summary(pl.UTF-8):	Solaris Porting Layer - pliki nagłówkowe jądra Linuksa\
 Release:	%{rel}@%{_kernel_ver_str}\
 Group:		Development/Building\
-%if %{with dist_kernel}\
 Requires:	kernel%{_alt_kernel}-headers\
 Requires:	kernel-spl-common-devel\
-%endif\
 \
 %description -n kernel%{_alt_kernel}-spl-devel\
 Solaris Porting Layer - Linux kernel headers configured for PLD\
