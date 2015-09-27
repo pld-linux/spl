@@ -21,7 +21,7 @@ exit 1
 %define		_duplicate_files_terminate_build	0
 
 %define		pname	spl
-%define		rel	1
+%define		rel	2
 Summary:	Solaris Porting Layer
 Summary(pl.UTF-8):	Solaris Porting Layer - warstwa do portowania kodu z Solarisa
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
