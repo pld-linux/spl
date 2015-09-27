@@ -109,7 +109,8 @@ dla jądra PLD z pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.\
 %configure \\\
 	--disable-silent-rules \\\
 	--with-config="kernel" \\\
-	--with-linux=%{_kernelsrcdir}\
+	--with-linux=%{_kernelsrcdir}\\\
+	--with-linux-obj=%{_kernelsrcdir}\
 \
 %{__make} clean\
 %{__make} %{?with_verbose:V=1}\
