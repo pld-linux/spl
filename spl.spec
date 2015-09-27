@@ -114,7 +114,7 @@ dla jądra PLD z pakietu kernel%{_alt_kernel} w wersji %{_kernel_ver}.\
 %{__make} clean\
 %{__make} %{?with_verbose:V=1}\
 p=`pwd`\
-%{__make} install DESTDIR=$p/installed INSTALL_MOD_DIR=misc\
+%{__make} -j1 install DESTDIR=$p/installed INSTALL_MOD_DIR=misc\
 %{nil}
 
 %{?with_kernel:%{expand:%create_kernel_packages}}
