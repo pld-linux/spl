@@ -25,12 +25,12 @@ exit 1
 Summary:	Solaris Porting Layer
 Summary(pl.UTF-8):	Solaris Porting Layer - warstwa do portowania kodu z Solarisa
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	0.6.5.3
+Version:	0.6.5.4
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	GPL v2+
 Group:		Applications/System
 Source0:	http://archive.zfsonlinux.org/downloads/zfsonlinux/spl/%{pname}-%{version}.tar.gz
-# Source0-md5:	717337236a1d06ad16993c4d01388cb0
+# Source0-md5:	d390bac291fa46e42c867d659cc8d1d3
 URL:		http://zfsonlinux.org/
 BuildRequires:	rpmbuild(macros) >= 1.701
 %{?with_kernel:%{expand:%buildrequires_kernel kernel%%{_alt_kernel}-module-build >= 3:2.6.20.2}}
