@@ -29,7 +29,7 @@ Version:	0.6.5.8
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	GPL v2+
 Group:		Applications/System
-Source0:	https://github.com/zfsonlinux/zfs/releases/download/zfs-%{version}/%{name}-%{version}.tar.gz
+Source0:	https://github.com/zfsonlinux/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
 # Source0-md5:	54b049cde051d0bd67f3f18ff58113c2
 URL:		http://zfsonlinux.org/
 BuildRequires:	rpmbuild(macros) >= 1.701
