@@ -21,7 +21,7 @@ exit 1
 %define		_duplicate_files_terminate_build	0
 
 %define		pname	spl
-%define		rel	1
+%define		rel	2
 Summary:	Solaris Porting Layer
 Summary(pl.UTF-8):	Solaris Porting Layer - warstwa do portowania kodu z Solarisa
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
@@ -31,6 +31,7 @@ License:	GPL v2+
 Group:		Applications/System
 Source0:	https://github.com/zfsonlinux/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
 # Source0-md5:	ab4e2538231dc4b3acf65fe2436ec46b
+Patch0:		kernel-4.11.patch
 URL:		http://zfsonlinux.org/
 BuildRequires:	rpmbuild(macros) >= 1.701
 %{?with_kernel:%{expand:%buildrequires_kernel kernel%%{_alt_kernel}-module-build >= 3:2.6.20.2}}
@@ -122,6 +123,7 @@ p=`pwd`\
 
 %prep
 %setup -q -n %{pname}-%{version}
+%patch0 -p1
 
 %build
 %{__aclocal} -I config

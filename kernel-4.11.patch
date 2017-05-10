@@ -1,0 +1,397 @@
+From 8d5feecacfdcca29336209bdccd6493a5fa53576 Mon Sep 17 00:00:00 2001
+From: Olaf Faaland <faaland1@llnl.gov>
+Date: Thu, 23 Feb 2017 09:52:08 -0800
+Subject: [PATCH] Linux 4.11 compat: set_task_state() removed
+
+Replace uses of set_task_state(current, STATE) with
+set_current_state(STATE).
+
+In Linux 4.11, torvalds/linux@642fa44, set_task_state() is removed.
+
+All spl uses are of the form set_task_state(current, STATE).
+set_current_state(STATE) is equivalent and has been available since
+Linux 2.2.26.
+
+Furthermore, set_current_state(STATE) is already used in about 15
+locations within spl.  This change should have no impact other than
+removing an unnecessary dependency.
+
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Olaf Faaland <faaland1@llnl.gov>
+Closes #603
+---
+ module/spl/spl-err.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/module/spl/spl-err.c b/module/spl/spl-err.c
+index 14ff8a3..cf9f096 100644
+--- a/module/spl/spl-err.c
++++ b/module/spl/spl-err.c
+@@ -65,7 +65,7 @@ spl_panic(const char *file, const char *func, int line, const char *fmt, ...) {
+ 	spl_dumpstack();
+ 
+ 	/* Halt the thread to facilitate further debugging */
+-	set_task_state(current, TASK_UNINTERRUPTIBLE);
++	set_current_state(TASK_UNINTERRUPTIBLE);
+ 	while (1)
+ 		schedule();
+ 
+@@ -98,7 +98,7 @@ vcmn_err(int ce, const char *fmt, va_list ap)
+ 		spl_dumpstack();
+ 
+ 		/* Halt the thread to facilitate further debugging */
+-		set_task_state(current, TASK_UNINTERRUPTIBLE);
++		set_current_state(TASK_UNINTERRUPTIBLE);
+ 		while (1)
+ 			schedule();
+ 	}
+From 94b1ab2ae01e9ee642aee87dd1a73e8d63629372 Mon Sep 17 00:00:00 2001
+From: Olaf Faaland <faaland1@llnl.gov>
+Date: Tue, 7 Mar 2017 13:18:53 -0800
+Subject: [PATCH] Linux 4.11 compat: vfs_getattr() takes 4 args
+
+There are changes to vfs_getattr() in torvalds/linux@a528d35.  The new
+interface is:
+
+int vfs_getattr(const struct path *path, struct kstat *stat,
+               u32 request_mask, unsigned int query_flags)
+
+The request_mask argument indicates which field(s) the caller intends to
+use.  Fields the caller does not specify via request_mask may be set in
+the returned struct anyway, but their values may be approximate.
+
+The query_flags argument indicates whether the filesystem must update
+the attributes from the backing store.
+
+This patch uses the query_flags which result in vfs_getattr behaving the same
+as it did with the 2-argument version which the kernel provided before
+Linux 4.11.
+
+Members blksize and blocks are now always the same size regardless of
+arch.  They match the size of the equivalent members in vnode_t.
+
+The configure checks are modified to ensure that the appropriate
+vfs_getattr() interface is used.
+
+A more complete fix, removing the ZFS dependency on vfs_getattr()
+entirely, is deferred as it is a much larger project.
+
+Reviewed-by: Chunwei Chen <david.chen@osnexus.com>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Olaf Faaland <faaland1@llnl.gov>
+Closes #608
+---
+ config/spl-build.m4    | 69 +++++++++++++++++++++++++++++++++++++-------------
+ module/spl/spl-vnode.c | 13 +++++++---
+ 2 files changed, 62 insertions(+), 20 deletions(-)
+
+diff --git a/config/spl-build.m4 b/config/spl-build.m4
+index 8d0e8ab..fc0efcf 100644
+--- a/config/spl-build.m4
++++ b/config/spl-build.m4
+@@ -43,6 +43,8 @@ AC_DEFUN([SPL_AC_CONFIG_KERNEL], [
+ 	SPL_AC_RWSEM_ACTIVITY
+ 	SPL_AC_RWSEM_ATOMIC_LONG_COUNT
+ 	SPL_AC_SCHED_RT_HEADER
++	SPL_AC_4ARGS_VFS_GETATTR
++	SPL_AC_3ARGS_VFS_GETATTR
+ 	SPL_AC_2ARGS_VFS_GETATTR
+ 	SPL_AC_USLEEP_RANGE
+ 	SPL_AC_KMEM_CACHE_ALLOCFLAGS
+@@ -1409,34 +1411,67 @@ AC_DEFUN([SPL_AC_SCHED_RT_HEADER],
+ 	])
+ ])
+ 
++
+ dnl #
+-dnl # 3.9 API change,
+-dnl # vfs_getattr() uses 2 args
+-dnl # It takes struct path * instead of struct vfsmount * and struct dentry *
++dnl # 4.11 API, a528d35e@torvalds/linux
++dnl # vfs_getattr(const struct path *p, struct kstat *s, u32 m, unsigned int f)
++dnl #
++AC_DEFUN([SPL_AC_4ARGS_VFS_GETATTR], [
++	AC_MSG_CHECKING([whether vfs_getattr() wants 4 args])
++	SPL_LINUX_TRY_COMPILE([
++		#include <linux/fs.h>
++	],[
++		vfs_getattr((const struct path *)NULL,
++			(struct kstat *)NULL,
++			(u32)0,
++			(unsigned int)0);
++	],[
++		AC_MSG_RESULT(yes)
++		AC_DEFINE(HAVE_4ARGS_VFS_GETATTR, 1,
++		  [vfs_getattr wants 4 args])
++	],[
++		AC_MSG_RESULT(no)
++	])
++])
++
++dnl #
++dnl # 3.9 API 
++dnl # vfs_getattr(struct path *p, struct kstat *s)
+ dnl #
+ AC_DEFUN([SPL_AC_2ARGS_VFS_GETATTR], [
+-	AC_MSG_CHECKING([whether vfs_getattr() wants])
++	AC_MSG_CHECKING([whether vfs_getattr() wants 2 args])
+ 	SPL_LINUX_TRY_COMPILE([
+ 		#include <linux/fs.h>
+ 	],[
+ 		vfs_getattr((struct path *) NULL,
+ 			(struct kstat *)NULL);
+ 	],[
+-		AC_MSG_RESULT(2 args)
++		AC_MSG_RESULT(yes)
+ 		AC_DEFINE(HAVE_2ARGS_VFS_GETATTR, 1,
+-		          [vfs_getattr wants 2 args])
++			  [vfs_getattr wants 2 args])
+ 	],[
+-		SPL_LINUX_TRY_COMPILE([
+-			#include <linux/fs.h>
+-		],[
+-			vfs_getattr((struct vfsmount *)NULL,
+-				(struct dentry *)NULL,
+-				(struct kstat *)NULL);
+-		],[
+-			AC_MSG_RESULT(3 args)
+-		],[
+-			AC_MSG_ERROR(unknown)
+-		])
++		AC_MSG_RESULT(no)
++	])
++])
++
++dnl #
++dnl # <3.9 API 
++dnl # vfs_getattr(struct vfsmount *v, struct dentry *d, struct kstat *k)
++dnl #
++AC_DEFUN([SPL_AC_3ARGS_VFS_GETATTR], [
++	AC_MSG_CHECKING([whether vfs_getattr() wants 3 args])
++	SPL_LINUX_TRY_COMPILE([
++		#include <linux/fs.h>
++	],[
++		vfs_getattr((struct vfsmount *)NULL,
++			(struct dentry *)NULL,
++			(struct kstat *)NULL);
++	],[
++		AC_MSG_RESULT(yes)
++		AC_DEFINE(HAVE_3ARGS_VFS_GETATTR, 1,
++		  [vfs_getattr wants 3 args])
++	],[
++		AC_MSG_RESULT(no)
+ 	])
+ ])
+ 
+diff --git a/module/spl/spl-vnode.c b/module/spl/spl-vnode.c
+index cd276b5..0902e11 100644
+--- a/module/spl/spl-vnode.c
++++ b/module/spl/spl-vnode.c
+@@ -153,7 +153,9 @@ vn_open(const char *path, uio_seg_t seg, int flags, int mode,
+ 	if (IS_ERR(fp))
+ 		return (-PTR_ERR(fp));
+ 
+-#ifdef HAVE_2ARGS_VFS_GETATTR
++#if defined(HAVE_4ARGS_VFS_GETATTR)
++	rc = vfs_getattr(&fp->f_path, &stat, STATX_TYPE, AT_STATX_SYNC_AS_STAT);
++#elif defined(HAVE_2ARGS_VFS_GETATTR)
+ 	rc = vfs_getattr(&fp->f_path, &stat);
+ #else
+ 	rc = vfs_getattr(fp->f_path.mnt, fp->f_dentry, &stat);
+@@ -510,7 +512,10 @@ vn_getattr(vnode_t *vp, vattr_t *vap, int flags, void *x3, void *x4)
+ 
+ 	fp = vp->v_file;
+ 
+-#ifdef HAVE_2ARGS_VFS_GETATTR
++#if defined(HAVE_4ARGS_VFS_GETATTR)
++	rc = vfs_getattr(&fp->f_path, &stat, STATX_BASIC_STATS,
++	    AT_STATX_SYNC_AS_STAT);
++#elif defined(HAVE_2ARGS_VFS_GETATTR)
+ 	rc = vfs_getattr(&fp->f_path, &stat);
+ #else
+ 	rc = vfs_getattr(fp->f_path.mnt, fp->f_dentry, &stat);
+@@ -708,7 +713,9 @@ vn_getf(int fd)
+ 	if (vp == NULL)
+ 		goto out_fget;
+ 
+-#ifdef HAVE_2ARGS_VFS_GETATTR
++#if defined(HAVE_4ARGS_VFS_GETATTR)
++	rc = vfs_getattr(&lfp->f_path, &stat, STATX_TYPE, AT_STATX_SYNC_AS_STAT);
++#elif defined(HAVE_2ARGS_VFS_GETATTR)
+ 	rc = vfs_getattr(&lfp->f_path, &stat);
+ #else
+ 	rc = vfs_getattr(lfp->f_path.mnt, lfp->f_dentry, &stat);
+From 9a054d54fb6772305fdbe0bb5b312cf051331726 Mon Sep 17 00:00:00 2001
+From: Olaf Faaland <faaland1@llnl.gov>
+Date: Tue, 7 Mar 2017 15:33:50 -0800
+Subject: [PATCH] Linux 4.11 compat: add linux/sched/signal.h
+
+In Linux 4.11, torvalds/linux@2a1f062, signal handling related functions
+were moved from sched.h into sched/signal.h.
+
+Add configure checks to detect this and include the new file where
+needed.
+
+Reviewed-by: Chunwei Chen <david.chen@osnexus.com>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Olaf Faaland <faaland1@llnl.gov>
+Closes #608
+---
+ config/spl-build.m4  | 19 +++++++++++++++++++
+ include/sys/signal.h |  4 ++++
+ 2 files changed, 23 insertions(+)
+
+diff --git a/config/spl-build.m4 b/config/spl-build.m4
+index fc0efcf..1dbc87e 100644
+--- a/config/spl-build.m4
++++ b/config/spl-build.m4
+@@ -43,6 +43,7 @@ AC_DEFUN([SPL_AC_CONFIG_KERNEL], [
+ 	SPL_AC_RWSEM_ACTIVITY
+ 	SPL_AC_RWSEM_ATOMIC_LONG_COUNT
+ 	SPL_AC_SCHED_RT_HEADER
++	SPL_AC_SCHED_SIGNAL_HEADER
+ 	SPL_AC_4ARGS_VFS_GETATTR
+ 	SPL_AC_3ARGS_VFS_GETATTR
+ 	SPL_AC_2ARGS_VFS_GETATTR
+@@ -1411,6 +1412,24 @@ AC_DEFUN([SPL_AC_SCHED_RT_HEADER],
+ 	])
+ ])
+ 
++dnl #
++dnl # 4.11 API change,
++dnl # Moved things from linux/sched.h to linux/sched/signal.h
++dnl #
++AC_DEFUN([SPL_AC_SCHED_SIGNAL_HEADER],
++	[AC_MSG_CHECKING([whether header linux/sched/signal.h exists])
++	SPL_LINUX_TRY_COMPILE([
++		#include <linux/sched.h>
++		#include <linux/sched/signal.h>
++	],[
++		return 0;
++	],[
++		AC_DEFINE(HAVE_SCHED_SIGNAL_HEADER, 1, [linux/sched/signal.h exists])
++		AC_MSG_RESULT(yes)
++	],[
++		AC_MSG_RESULT(no)
++	])
++])
+ 
+ dnl #
+ dnl # 4.11 API, a528d35e@torvalds/linux
+diff --git a/include/sys/signal.h b/include/sys/signal.h
+index 823fea3..77cc2d3 100644
+--- a/include/sys/signal.h
++++ b/include/sys/signal.h
+@@ -27,6 +27,10 @@
+ 
+ #include <linux/sched.h>
+ 
++#ifdef HAVE_SCHED_SIGNAL_HEADER
++#include <linux/sched/signal.h>
++#endif
++
+ #define	FORREAL		0	/* Usual side-effects */
+ #define	JUSTLOOKING	1	/* Don't stop the process */
+ 
+From bf8abea4dade111bdf3aeae30bd4bd75d49aca70 Mon Sep 17 00:00:00 2001
+From: Olaf Faaland <faaland1@llnl.gov>
+Date: Mon, 13 Mar 2017 10:37:10 -0700
+Subject: [PATCH] Linux 4.11 compat: remove stub for __put_task_struct
+
+Before kernel 2.6.29 credentials were embedded in task_structs, and zfs had
+cases where one thread would need to refer to the credential of another thread,
+forcing it to take a hold on the foreign thread's task_struct to ensure it was
+not freed.
+
+Since 2.6.29, the credential has been moved out of the task_struct into a
+cred_t.
+
+In addition, the mainline kernel originally did not export __put_task_struct()
+but the RHEL5 kernel did, according to zfsonlinux/spl@e811949a570.  As of
+2.6.39 the mainline kernel exports it.
+
+There is no longer zfs code that takes or releases holds on a task_struct, and
+so there is no longer any reference to __put_task_struct().
+
+This affects the linux 4.11 kernel because the prototype for
+__put_task_struct() is in a new include file (linux/sched/task.h) and so the
+config check failed to detect the exported symbol.
+
+Removing the unnecessary stub and corresponding config check.  This works on
+kernels since the oldest one currently supported, 2.6.32 as shipped with
+Centos/RHEL.
+
+Reviewed-by: Chunwei Chen <david.chen@osnexus.com>
+Reviewed-by: Brian Behlendorf <behlendorf1@llnl.gov>
+Signed-off-by: Olaf Faaland <faaland1@llnl.gov>
+Closes #608
+---
+ config/spl-build.m4      | 20 --------------------
+ module/spl/spl-generic.c | 16 ----------------
+ 2 files changed, 36 deletions(-)
+
+diff --git a/config/spl-build.m4 b/config/spl-build.m4
+index 1dbc87e..b5aa7ad 100644
+--- a/config/spl-build.m4
++++ b/config/spl-build.m4
+@@ -33,7 +33,6 @@ AC_DEFUN([SPL_AC_CONFIG_KERNEL], [
+ 	SPL_AC_INODE_TRUNCATE_RANGE
+ 	SPL_AC_FS_STRUCT_SPINLOCK
+ 	SPL_AC_KUIDGID_T
+-	SPL_AC_PUT_TASK_STRUCT
+ 	SPL_AC_KERNEL_FALLOCATE
+ 	SPL_AC_CONFIG_ZLIB_INFLATE
+ 	SPL_AC_CONFIG_ZLIB_DEFLATE
+@@ -1086,25 +1085,6 @@ AC_DEFUN([SPL_AC_KUIDGID_T], [
+ ])
+ 
+ dnl #
+-dnl # 2.6.39 API change,
+-dnl # __put_task_struct() was exported by the mainline kernel.
+-dnl #
+-AC_DEFUN([SPL_AC_PUT_TASK_STRUCT],
+-	[AC_MSG_CHECKING([whether __put_task_struct() is available])
+-	SPL_LINUX_TRY_COMPILE_SYMBOL([
+-		#include <linux/sched.h>
+-	], [
+-		__put_task_struct(NULL);
+-	], [__put_task_struct], [], [
+-		AC_MSG_RESULT(yes)
+-		AC_DEFINE(HAVE_PUT_TASK_STRUCT, 1,
+-		          [__put_task_struct() is available])
+-	], [
+-		AC_MSG_RESULT(no)
+-	])
+-])
+-
+-dnl #
+ dnl # 2.6.35 API change,
+ dnl # Unused 'struct dentry *' removed from vfs_fsync() prototype.
+ dnl #
+diff --git a/module/spl/spl-generic.c b/module/spl/spl-generic.c
+index ce60963..a9445eb 100644
+--- a/module/spl/spl-generic.c
++++ b/module/spl/spl-generic.c
+@@ -459,22 +459,6 @@ ddi_copyout(const void *from, void *to, size_t len, int flags)
+ }
+ EXPORT_SYMBOL(ddi_copyout);
+ 
+-#ifndef HAVE_PUT_TASK_STRUCT
+-/*
+- * This is only a stub function which should never be used.  The SPL should
+- * never be putting away the last reference on a task structure so this will
+- * not be called.  However, we still need to define it so the module does not
+- * have undefined symbol at load time.  That all said if this impossible
+- * thing does somehow happen PANIC immediately so we know about it.
+- */
+-void
+-__put_task_struct(struct task_struct *t)
+-{
+-	PANIC("Unexpectly put last reference on task %d\n", (int)t->pid);
+-}
+-EXPORT_SYMBOL(__put_task_struct);
+-#endif /* HAVE_PUT_TASK_STRUCT */
+-
+ /*
+  * Read the unique system identifier from the /etc/hostid file.
+  *
