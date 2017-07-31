@@ -21,17 +21,16 @@ exit 1
 %define		_duplicate_files_terminate_build	0
 
 %define		pname	spl
-%define		rel	2
+%define		rel	1
 Summary:	Solaris Porting Layer
 Summary(pl.UTF-8):	Solaris Porting Layer - warstwa do portowania kodu z Solarisa
 Name:		%{pname}%{?_pld_builder:%{?with_kernel:-kernel}}%{_alt_kernel}
-Version:	0.6.5.9
+Version:	0.7.0
 Release:	%{rel}%{?_pld_builder:%{?with_kernel:@%{_kernel_ver_str}}}
 License:	GPL v2+
 Group:		Applications/System
 Source0:	https://github.com/zfsonlinux/zfs/releases/download/zfs-%{version}/%{pname}-%{version}.tar.gz
-# Source0-md5:	ab4e2538231dc4b3acf65fe2436ec46b
-Patch0:		kernel-4.11.patch
+# Source0-md5:	5ae8ecb138c25d90371bf0d4a35ab779
 URL:		http://zfsonlinux.org/
 BuildRequires:	rpmbuild(macros) >= 1.701
 %{?with_kernel:%{expand:%buildrequires_kernel kernel%%{_alt_kernel}-module-build >= 3:2.6.20.2}}
@@ -123,7 +122,6 @@ p=`pwd`\
 
 %prep
 %setup -q -n %{pname}-%{version}
-%patch0 -p1
 
 %build
 %{__aclocal} -I config
@@ -161,6 +159,7 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(644,root,root,755)
 %doc AUTHORS DISCLAIMER
+%attr(755,root,root) %{_bindir}/splslab.py
 %attr(755,root,root) %{_sbindir}/splat
 %{_mandir}/man1/splat.1*
 %{_mandir}/man5/spl-module-parameters.5.gz
